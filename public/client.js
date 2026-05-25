@@ -1,4 +1,10 @@
-const ws = new WebSocket(`ws://${window.location.host}/ws`);
+// Determine the correct protocol: wss for HTTPS, ws for local HTTP
+const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const ws = new WebSocket(`${protocol}://${window.location.host}/ws`);
+
+ws.onerror = (error) => {
+  console.error("WebSocket Error:", error);
+};
 
 function join() {
   const name = document.getElementById("username").value;
