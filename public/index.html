@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Scrum Poker</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="welcome-msg" class="hidden"></div>
+        <h1>Scrum Poker</h1>
+
+        <div id="login-form-wrapper">
+            <input
+                type="text"
+                id="username"
+                placeholder="Enter your name"
+                maxlength="50"
+            />
+            <button onclick="join()">Join</button>
+        </div>
+
+        <div id="poker-area" class="hidden">
+            <div id="cards"></div>
+            <div id="controls">
+                <button id="reveal-btn" onclick="toggleReveal()">
+                    Toggle Reveal
+                </button>
+                <button id="clear-btn" onclick="clearVotes()">
+                    Clear Votes
+                </button>
+            </div>
+            <div id="user-list"></div>
+        </div>
+        <script src="client.js"></script>
+    </body>
+</html>
