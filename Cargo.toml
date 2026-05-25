@@ -1,0 +1,16 @@
+[package]
+name = "scrum_poker_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8.1", features = ["ws"] }
+tokio = { version = "1.43.0", features = ["full"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+tower-http = { version = "0.6.2", features = ["fs", "trace"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+futures-util = "0.3.31"
+uuid = { version = "1.12.1", features = ["v4"] }
+dashmap = "6.1.0"
