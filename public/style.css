@@ -38,6 +38,24 @@ h1 {
     display: none;
 }
 
+#notification {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.notification-message {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    transition: opacity 0.5s ease-in-out;
+}
+
 #cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -83,6 +101,22 @@ h1 {
 }
 #user-table th {
     background-color: #f2f2f2;
+}
+
+.user-name-cell {
+    position: relative;
+    cursor: default;
+}
+
+.edit-icon {
+    display: none;
+    margin-left: 10px;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.user-name-cell.is-me:hover .edit-icon {
+    display: inline;
 }
 
 .user-vote svg {
