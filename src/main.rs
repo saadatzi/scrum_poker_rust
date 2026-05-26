@@ -45,6 +45,7 @@ enum Action {
 struct ServerMessage {
     users: Vec<User>,
     revealed: bool,
+    notification: Option<String>,
 }
 
 #[tokio::main]
@@ -89,6 +90,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     // Handle incoming messages
     while let Some(Ok(Message::Text(text))) = receiver.next().await {
         if let Ok(action) = serde_json::from_str::<Action>(&text) {
+            let mut notification = None;
             match action {
                 Action::Join { name } => {
                     state.users.insert(
@@ -106,20 +108,28 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                     }
                 }
                 Action::Reveal => {
+                    let name = state.users.get(&user_id).map(|u| u.name.clone()).unwrap_or_else(|| "Someone".to_string());
                     if let Ok(mut revealed) = state.revealed.write() {
                         *revealed = !*revealed;
+                        notification = Some(format!("{} toggled reveal", name));
                     }
                 }
                 Action::Clear => {
+                    let name = state.users.get(&user_id).map(|u| u.name.clone()).unwrap_or_else(|| "Someone".to_string());
                     for mut user in state.users.iter_mut() {
                         user.vote = None;
                     }
+                    notification = Some(format!("{} cleared votes", name));
                 }
             }
 
             let users: Vec<User> = state.users.iter().map(|u| u.clone()).collect();
             let revealed = *state.revealed.read().unwrap();
-            let msg = serde_json::to_string(&ServerMessage { users, revealed }).unwrap();
+            let msg = serde_json::to_string(&ServerMessage { 
+                users, 
+                revealed,
+                notification,
+            }).unwrap();
             let _ = state.tx.send(msg);
         }
     }
