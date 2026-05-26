@@ -2,36 +2,61 @@
 const protocol = window.location.protocol === "https:" ? "wss" : "ws";
 const ws = new WebSocket(`${protocol}://${window.location.host}/ws`);
 
+let currentUserName = localStorage.getItem("poker_username") || "";
+
+ws.onopen = () => {
+  if (currentUserName) {
+    document.getElementById("username").value = currentUserName;
+    join();
+  }
+};
+
 ws.onerror = (error) => {
   console.error("WebSocket Error:", error);
 };
-
-function join() {
-  const name = document.getElementById("username").value;
-  if (!name) return;
-
-  // Send join message
-  ws.send(JSON.stringify({ type: "join", name }));
-
-  // Show Welcome Message
-  const welcome = document.getElementById("welcome-msg");
-  welcome.innerText = `Welcome, ${name}!`;
-  welcome.classList.remove("hidden");
-  setTimeout(() => {
-    welcome.style.opacity = "0";
-    setTimeout(() => welcome.classList.add("hidden"), 1000);
-  }, 5000);
-
-  document.getElementById("login-form").classList.add("hidden");
-  document.getElementById("poker-area").classList.remove("hidden");
-}
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   updateUI(data);
 };
 
+let notifications = [];
+function showNotification(message) {
+  const container = document.getElementById("notification");
+  
+  // Create message element
+  const msgEl = document.createElement("div");
+  msgEl.className = "notification-message";
+  msgEl.innerText = message;
+  
+  // Add to internal list and DOM
+  notifications.push(msgEl);
+  container.appendChild(msgEl);
+
+  // Keep only latest 3
+  if (notifications.length > 3) {
+    const old = notifications.shift();
+    if (old && old.parentNode) {
+      old.remove();
+    }
+  }
+
+  // Set timeout to remove after 5 seconds
+  setTimeout(() => {
+    msgEl.style.opacity = "0";
+    setTimeout(() => {
+      if (msgEl.parentNode) {
+        msgEl.remove();
+        notifications = notifications.filter(n => n !== msgEl);
+      }
+    }, 500);
+  }, 5000);
+}
+
 function updateUI(data) {
+  if (data.notification) {
+    showNotification(data.notification);
+  }
   const list = document.getElementById("user-list");
   list.innerHTML = `
     <table id="user-table">
@@ -48,8 +73,12 @@ function updateUI(data) {
   const tbody = document.getElementById("user-table-body");
   data.users.forEach((user) => {
     const tr = document.createElement("tr");
+    const isMe = user.name === currentUserName;
     tr.innerHTML = `
-        <td>${user.name}</td>
+        <td class="user-name-cell ${isMe ? "is-me" : ""}">
+            ${user.name}
+            ${isMe ? '<span class="edit-icon" onclick="editName()">✏️</span>' : ""}
+        </td>
         <td class="user-vote">${
           data.revealed ? user.vote || "-" : user.vote ? DUCK_SVG : "-"
         }</td>
@@ -66,12 +95,21 @@ function clearVotes() {
   ws.send(JSON.stringify({ type: "clear" }));
 }
 
+function editName() {
+  document.getElementById("poker-area").classList.add("hidden");
+  document.getElementById("login-form-wrapper").classList.remove("hidden");
+  document.getElementById("username").focus();
+}
+
 // Removed the card generation from the global scope.
 // It will be triggered after a successful join.
 
 function join() {
   const name = document.getElementById("username").value;
   if (!name) return;
+
+  currentUserName = name;
+  localStorage.setItem("poker_username", name);
 
   ws.send(JSON.stringify({ type: "join", name }));
 
