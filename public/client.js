@@ -1,6 +1,9 @@
 // Determine the correct protocol: wss for HTTPS, ws for local HTTP
 const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-const ws = new WebSocket(`${protocol}://${window.location.host}/ws`);
+const roomId = window.location.pathname.split("/").filter(Boolean)[1];
+const ws = new WebSocket(
+  `${protocol}://${window.location.host}/ws/${encodeURIComponent(roomId)}`,
+);
 
 let currentUserName = localStorage.getItem("poker_username") || "";
 
@@ -23,12 +26,12 @@ ws.onmessage = (event) => {
 let notifications = [];
 function showNotification(message) {
   const container = document.getElementById("notification");
-  
+
   // Create message element
   const msgEl = document.createElement("div");
   msgEl.className = "notification-message";
   msgEl.innerText = message;
-  
+
   // Add to internal list and DOM
   notifications.push(msgEl);
   container.appendChild(msgEl);
@@ -47,7 +50,7 @@ function showNotification(message) {
     setTimeout(() => {
       if (msgEl.parentNode) {
         msgEl.remove();
-        notifications = notifications.filter(n => n !== msgEl);
+        notifications = notifications.filter((n) => n !== msgEl);
       }
     }, 500);
   }, 5000);

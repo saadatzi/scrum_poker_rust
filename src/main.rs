@@ -1,9 +1,9 @@
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        State,
+        Path, State,
     },
-    response::IntoResponse,
+    response::{Html, IntoResponse, Redirect},
     routing::{get, get_service},
     Router,
 };
@@ -14,11 +14,29 @@ use std::sync::{Arc, RwLock};
 use tokio::sync::broadcast;
 use tower_http::services::ServeDir;
 
+const INDEX_HTML: &str = include_str!("../public/index.html");
+
 #[derive(Debug)]
 struct AppState {
+    rooms: DashMap<String, Arc<RoomState>>,
+}
+
+#[derive(Debug)]
+struct RoomState {
     users: DashMap<String, User>,
     revealed: RwLock<bool>,
     tx: broadcast::Sender<String>,
+}
+
+impl RoomState {
+    fn new() -> Self {
+        let (tx, _) = broadcast::channel(100);
+        Self {
+            users: DashMap::new(),
+            revealed: RwLock::new(false),
+            tx,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -52,33 +70,46 @@ struct ServerMessage {
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let (tx, _) = broadcast::channel(100);
     let state = Arc::new(AppState {
-        users: DashMap::new(),
-        revealed: RwLock::new(false),
-        tx,
+        rooms: DashMap::new(),
     });
 
     let app = Router::new()
-        .route("/ws", get(ws_handler))
+        .route("/", get(create_room_redirect))
+        .route("/room/{room_id}", get(room_page))
+        .route("/ws/{room_id}", get(ws_handler))
         .fallback_service(get_service(ServeDir::new("public")))
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+        .await
+        .unwrap();
     println!("Server running on http://localhost:3000");
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state))
+async fn create_room_redirect() -> Redirect {
+    Redirect::temporary(&format!("/room/{}", uuid::Uuid::new_v4()))
 }
 
-async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
+async fn room_page(Path(_room_id): Path<String>) -> Html<&'static str> {
+    Html(INDEX_HTML)
+}
+
+async fn ws_handler(
+    Path(room_id): Path<String>,
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| handle_socket(socket, state, room_id))
+}
+
+async fn handle_socket(socket: WebSocket, state: Arc<AppState>, room_id: String) {
+    let room = get_or_create_room(&state, &room_id);
     let (mut sender, mut receiver) = socket.split();
-    let mut rx = state.tx.subscribe();
+    let mut rx = room.tx.subscribe();
     let user_id = uuid::Uuid::new_v4().to_string();
 
-    // Task to forward broadcast messages to the websocket
     let send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
             if sender.send(Message::Text(msg.into())).await.is_err() {
@@ -87,13 +118,12 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
         }
     });
 
-    // Handle incoming messages
     while let Some(Ok(Message::Text(text))) = receiver.next().await {
         if let Ok(action) = serde_json::from_str::<Action>(&text) {
             let mut notification = None;
             match action {
                 Action::Join { name } => {
-                    state.users.insert(
+                    room.users.insert(
                         user_id.clone(),
                         User {
                             id: user_id.clone(),
@@ -103,37 +133,66 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                     );
                 }
                 Action::Vote { value } => {
-                    if let Some(mut user) = state.users.get_mut(&user_id) {
+                    if let Some(mut user) = room.users.get_mut(&user_id) {
                         user.vote = Some(value);
                     }
                 }
                 Action::Reveal => {
-                    let name = state.users.get(&user_id).map(|u| u.name.clone()).unwrap_or_else(|| "Someone".to_string());
-                    if let Ok(mut revealed) = state.revealed.write() {
+                    let name = room
+                        .users
+                        .get(&user_id)
+                        .map(|u| u.name.clone())
+                        .unwrap_or_else(|| "Someone".to_string());
+                    if let Ok(mut revealed) = room.revealed.write() {
                         *revealed = !*revealed;
                         notification = Some(format!("{} toggled reveal", name));
                     }
                 }
                 Action::Clear => {
-                    let name = state.users.get(&user_id).map(|u| u.name.clone()).unwrap_or_else(|| "Someone".to_string());
-                    for mut user in state.users.iter_mut() {
+                    let name = room
+                        .users
+                        .get(&user_id)
+                        .map(|u| u.name.clone())
+                        .unwrap_or_else(|| "Someone".to_string());
+                    for mut user in room.users.iter_mut() {
                         user.vote = None;
+                    }
+                    if let Ok(mut revealed) = room.revealed.write() {
+                        *revealed = false;
                     }
                     notification = Some(format!("{} cleared votes", name));
                 }
             }
 
-            let users: Vec<User> = state.users.iter().map(|u| u.clone()).collect();
-            let revealed = *state.revealed.read().unwrap();
-            let msg = serde_json::to_string(&ServerMessage { 
-                users, 
-                revealed,
-                notification,
-            }).unwrap();
-            let _ = state.tx.send(msg);
+            broadcast_room_state(&room, notification);
         }
     }
 
     send_task.abort();
-    state.users.remove(&user_id);
+    room.users.remove(&user_id);
+    broadcast_room_state(&room, None);
+
+    if room.users.is_empty() {
+        state.rooms.remove(&room_id);
+    }
+}
+
+fn get_or_create_room(state: &AppState, room_id: &str) -> Arc<RoomState> {
+    state
+        .rooms
+        .entry(room_id.to_string())
+        .or_insert_with(|| Arc::new(RoomState::new()))
+        .clone()
+}
+
+fn broadcast_room_state(room: &RoomState, notification: Option<String>) {
+    let users: Vec<User> = room.users.iter().map(|user| user.clone()).collect();
+    let revealed = *room.revealed.read().unwrap();
+    let msg = serde_json::to_string(&ServerMessage {
+        users,
+        revealed,
+        notification,
+    })
+    .unwrap();
+    let _ = room.tx.send(msg);
 }
