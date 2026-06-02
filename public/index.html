@@ -3,11 +3,29 @@
     <head>
         <meta charset="UTF-8" />
         <title>Scrum Poker</title>
-        <link rel="stylesheet" href="/style.css?v=3" />
+        <link rel="stylesheet" href="/style.css?v=4" />
     </head>
     <body>
         <div id="welcome-msg" class="hidden"></div>
-        <h1>Scrum Poker</h1>
+        <h1>
+            <span class="title-icon" aria-hidden="true">
+                <svg
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <rect x="3" y="4" width="12" height="16" rx="2" />
+                    <rect x="9" y="6" width="12" height="12" rx="2" />
+                </svg>
+            </span>
+            Scrum Poker
+        </h1>
 
         <div id="login-form-wrapper">
             <input
@@ -20,20 +38,61 @@
         </div>
 
         <div id="poker-area" class="hidden">
-            <div id="user-list"></div>
             <div id="main-content">
                 <div id="controls">
                     <button id="reveal-btn" onclick="toggleReveal()">
-                        Show
+                        <span class="btn-icon" aria-hidden="true">
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="20"
+                                height="20"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"
+                                />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </span>
+                        <span class="btn-label">Show</span>
                     </button>
                     <button id="clear-btn" onclick="clearVotes()">
-                        Clear Votes
+                        <span class="btn-icon" aria-hidden="true">
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="20"
+                                height="20"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polyline points="3 6 5 6 21 6" />
+                                <path
+                                    d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                                />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
+                                <path
+                                    d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"
+                                />
+                            </svg>
+                        </span>
+                        <span class="btn-label">Clear Votes</span>
                     </button>
                 </div>
                 <div id="cards"></div>
                 <div id="notification" class="hidden"></div>
             </div>
+            <div id="user-list"></div>
         </div>
-        <script src="/client.js?v=3"></script>
+        <script src="/client.js?v=4"></script>
     </body>
 </html>

@@ -62,7 +62,10 @@ function updateUI(data) {
   }
 
   const revealBtn = document.getElementById("reveal-btn");
-  if (revealBtn) revealBtn.innerText = data.revealed ? "Hide" : "Show";
+  if (revealBtn) {
+    const label = revealBtn.querySelector(".btn-label");
+    if (label) label.textContent = data.revealed ? "Hide" : "Show";
+  }
 
   const list = document.getElementById("user-list");
   list.innerHTML = `
