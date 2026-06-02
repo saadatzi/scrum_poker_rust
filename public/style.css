@@ -58,19 +58,24 @@ h1 {
 
 #cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 85px);
     gap: 15px;
     margin-bottom: 30px;
-    width: 375px;
+    width: 100%;
+    max-width: 540px;
+    justify-content: center;
 }
 .card {
-    padding: 22px;
+    width: 85px;
+    height: 85px;
     border: 1.5px solid #ccc;
     cursor: pointer;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 8px;
     background: #f9f9f9;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
 }
 
 #controls button {
@@ -78,29 +83,56 @@ h1 {
     font-size: 1.2rem;
 }
 
-#user-list {
-    margin-top: 40px;
+#poker-area {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    align-items: flex-start;
+    justify-content: center;
     width: 100%;
+    max-width: 1000px;
+    margin-top: 20px;
+}
+
+#user-list {
+    margin-top: 0;
+    width: 240px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 1rem;
+}
+
+#main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    font-size: 3rem;
+}
+
+#controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 20px 0;
+    width: 100%;
 }
 
 #user-table {
     border-collapse: collapse;
     width: 100%;
-    max-width: 600px;
+    max-width: none;
 }
 #user-table th,
 #user-table td {
-    padding: 15px 30px;
+    padding: 10px 16px;
     border: 1px solid #ddd;
-    text-align: center;
+    text-align: left;
 }
 #user-table th {
     background-color: #f2f2f2;
+    text-align: left;
 }
 
 .user-name-cell {
@@ -120,6 +152,41 @@ h1 {
 }
 
 .user-vote svg {
-    width: 72px;
-    height: 72px;
+    width: 48px;
+    height: 42px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 16px;
+        font-size: 1rem;
+    }
+    #poker-area {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    #user-list {
+        width: 100%;
+        align-items: center;
+    }
+    #main-content {
+        width: 100%;
+    }
+    #controls {
+        width: 100%;
+        justify-content: center;
+        margin: 8px 0;
+    }
+    #cards {
+        grid-template-columns: repeat(3, 85px);
+        max-width: 480px;
+        gap: 10px;
+        justify-content: center;
+    }
+    #user-table th,
+    #user-table td {
+        text-align: center;
+        padding: 8px 10px;
+    }
 }

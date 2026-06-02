@@ -60,6 +60,10 @@ function updateUI(data) {
   if (data.notification) {
     showNotification(data.notification);
   }
+
+  const revealBtn = document.getElementById("reveal-btn");
+  if (revealBtn) revealBtn.innerText = data.revealed ? "Hide" : "Show";
+
   const list = document.getElementById("user-list");
   list.innerHTML = `
     <table id="user-table">
@@ -74,7 +78,31 @@ function updateUI(data) {
   `;
 
   const tbody = document.getElementById("user-table-body");
-  data.users.forEach((user) => {
+
+  // copy users so we can sort without mutating original
+  let users = Array.isArray(data.users) ? data.users.slice() : [];
+
+  // When votes are revealed, sort descending by numeric vote value.
+  // Non-numeric votes (e.g. "?" or null) are placed at the end.
+  if (data.revealed) {
+    users.sort((a, b) => {
+      const toNum = (v) => {
+        if (v == null) return NaN;
+        const n = Number(String(v).trim());
+        return Number.isFinite(n) ? n : NaN;
+      };
+      const an = toNum(a.vote);
+      const bn = toNum(b.vote);
+      const aIsNaN = Number.isNaN(an);
+      const bIsNaN = Number.isNaN(bn);
+      if (aIsNaN && bIsNaN) return 0;
+      if (aIsNaN) return 1; // push non-numeric to the end
+      if (bIsNaN) return -1;
+      return bn - an; // descending
+    });
+  }
+
+  users.forEach((user) => {
     const tr = document.createElement("tr");
     const isMe = user.name === currentUserName;
     tr.innerHTML = `

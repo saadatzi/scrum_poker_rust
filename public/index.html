@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <title>Scrum Poker</title>
-        <link rel="stylesheet" href="/style.css" />
+        <link rel="stylesheet" href="/style.css?v=3" />
     </head>
     <body>
         <div id="welcome-msg" class="hidden"></div>
@@ -20,18 +20,20 @@
         </div>
 
         <div id="poker-area" class="hidden">
-            <div id="cards"></div>
-            <div id="controls">
-                <button id="reveal-btn" onclick="toggleReveal()">
-                    Toggle Reveal
-                </button>
-                <button id="clear-btn" onclick="clearVotes()">
-                    Clear Votes
-                </button>
-            </div>
-            <div id="notification" class="hidden"></div>
             <div id="user-list"></div>
+            <div id="main-content">
+                <div id="controls">
+                    <button id="reveal-btn" onclick="toggleReveal()">
+                        Show
+                    </button>
+                    <button id="clear-btn" onclick="clearVotes()">
+                        Clear Votes
+                    </button>
+                </div>
+                <div id="cards"></div>
+                <div id="notification" class="hidden"></div>
+            </div>
         </div>
-        <script src="/client.js"></script>
+        <script src="/client.js?v=3"></script>
     </body>
 </html>
